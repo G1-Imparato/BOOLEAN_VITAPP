@@ -1,261 +1,252 @@
 <!DOCTYPE html>
 <html lang="it">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VITAPP - Tracciamento Farmaci & Integratori</title>
 
-  <!-- Google Fonts: Quantico (Font principale) e Material Symbols Rounded (Icone) -->
+  <!-- Google Fonts: Font Quantico e Icone Rounded Geometry -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Quantico:ital,wght@0,400;0,700;1,400;1,700&family=Rock+3D&display=swap"
-    rel="stylesheet">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Quantico:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 
-  <!-- Foglio di stile CSS esterno -->
+  <!-- Foglio di Stile Esterno -->
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
   <!-- ==========================================================================
-       SIMULAZIONE NOTIFICA SMARTPHONE (BANNER A COMPARSA)
+       === NOTIFICA TELEFONO (PROMEMORIA ORARIO SVEGLIA) ===
        ========================================================================== -->
-  <aside id="phone-notification" class="phone-notification" aria-live="polite">
-    <div class="phone-notification-icon">
+  <div class="phone-notification" id="phoneNotification" role="alert">
+    <div class="notif-icon-box">
       <span class="material-symbols-rounded">notifications_active</span>
     </div>
-    <div class="phone-notification-content">
-      <div class="phone-notification-title">
-        <span>Vitapp • Promemoria</span>
-        <span id="notif-time">Adesso</span>
+    <div class="notif-content">
+      <div class="notif-header">
+        <span>VITAPP PROMEMORIA</span>
+        <span id="notifTime">08:30</span>
       </div>
-      <div id="notif-body" class="phone-notification-body">È ora di prendere Magnesio Notte</div>
+      <p class="notif-title" id="notifTitle">È ora di prendere la medicina!</p>
+      <p class="notif-desc" id="notifDesc">Tocca per visualizzare la scheda dosi.</p>
     </div>
-  </aside>
-
-  <!-- ==========================================================================
-       CONTENITORE PRINCIPALE MOBILE-FIRST (LARGHEZZA MASSIMA 420px)
-       ========================================================================== -->
-  <div class="app-container">
-    <!-- Effetti di luce ambientale sfumata sullo sfondo -->
-    <div class="ambient-glow glow-1"></div>
-    <div class="ambient-glow glow-2"></div>
-
-    <!-- HEADER: TITOLO, VERSIONE, SUBTITLE E TASTO NOTIFICA -->
-    <header class="app-header">
-      <div class="header-top">
-        <h1 class="brand-title">
-          VITAPPP
-          <span class="version-tag">v0.9-WF</span>
-        </h1>
-        <button id="btn-trigger-notification" class="btn-notify-test btn-ripple" type="button"
-          aria-label="Simula notifica telefono" title="Simula notifica telefono">
-          <span class="material-symbols-rounded">notifications</span>
-        </button>
-      </div>
-      <p class="header-subtitle">
-        <span>Tracciamento farmaci & integratori</span>
-        <span class="bullet">•</span>
-        <span>Oggi, 24 Ottobre</span>
-      </p>
-    </header>
-
-    <main>
-      <!-- ======================================================================
-           SEZIONE 1: TIMELINE DELLE MEDICINE CON SLOT A FORMA DI ROMBO
-           ====================================================================== -->
-      <section class="timeline-section" aria-label="Programmazione giornaliera medicine">
-        <div class="section-title-row">
-          <span class="section-label">
-            <span class="pulse-dot"></span>
-            Timeline Dosi
-          </span>
-          <span id="timeline-count-badge" class="count-badge">4 PIANIFICATE</span>
-        </div>
-
-        <!-- Striscia orizzontale scorrevole con le medicine e il tasto "+" -->
-        <div id="timeline-scroll-strip" class="timeline-scroll-strip">
-          <!-- Gli slot delle medicine vengono renderizzati dinamicamente dal JavaScript -->
-        </div>
-      </section>
-
-      <!-- ======================================================================
-           SEZIONE 2: SCHEDA VETRO TRASLUCIDO (DETTAGLIO MEDICINA SELEZIONATA)
-           ====================================================================== -->
-      <section class="glass-card" id="detail-card" aria-label="Dettaglio della medicina selezionata">
-        <!-- Effetto fascio di luce Shimmer -->
-        <div class="shimmer-overlay" id="card-shimmer"></div>
-
-        <div class="card-top-bar">
-          <div class="card-category">
-            <span class="pulse-dot"></span>
-            <span>Dettaglio Dose</span>
-          </div>
-          <span id="detail-target-badge" class="target-badge">ORARIO TARGET: 12:45</span>
-        </div>
-
-        <div id="detail-card-body" class="content-fade">
-          <div class="card-main-info">
-            <div>
-              <h2 id="detail-med-name" class="med-title">Vitamina C + Zinco</h2>
-              <p id="detail-med-spec" class="med-spec">Dose: 500mg • Formato: Compressa idrosolubile</p>
-            </div>
-            <div class="med-icon-box">
-              <span id="detail-med-icon" class="material-symbols-rounded">pill</span>
-            </div>
-          </div>
-
-          <!-- Riquadro istruzioni per l'assunzione -->
-          <div class="instruction-box">
-            <div class="instruction-header">
-              <span class="material-symbols-rounded">info</span>
-              <span>Istruzioni d'assunzione</span>
-            </div>
-            <p id="detail-med-instruction" class="instruction-text">
-              Da assumere dopo il pranzo con un bicchiere d'acqua. Evitare a stomaco vuoto.
-            </p>
-          </div>
-
-          <!-- Dati secondari di supporto -->
-          <div class="card-meta-grid">
-            <div class="meta-item">
-              <span class="meta-label">Intervallo Minimo</span>
-              <span id="detail-med-interval" class="meta-value">3 ore dal pasto</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Stato Scorta</span>
-              <span id="detail-med-stock" class="meta-value">24 dosi rimanenti</span>
-            </div>
-          </div>
-
-          <!-- Pulsante didattico per modificare nome, orario e istruzioni -->
-          <button id="btn-open-edit-modal" class="btn-edit-med btn-ripple" type="button">
-            <span class="material-symbols-rounded">edit</span>
-            <span>Modifica Nome & Dettagli</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- ======================================================================
-           SEZIONE 3: PULSANTI DI AZIONE ("PRENDI ORA" & "SALTA QUESTA DOSE")
-           ====================================================================== -->
-      <section class="actions-section" aria-label="Azioni sulla medicina">
-        <button id="btn-take-now" class="btn-primary-action btn-ripple" type="button">
-          <span id="take-btn-icon" class="material-symbols-rounded">check_circle</span>
-          <span id="take-btn-text">PRENDI ORA</span>
-        </button>
-
-        <button id="btn-skip-dose" class="btn-secondary-action btn-ripple" type="button">
-          <span id="skip-btn-icon" class="material-symbols-rounded">update_disabled</span>
-          <span id="skip-btn-text">SALTA QUESTA DOSE</span>
-        </button>
-      </section>
-
-      <!-- ======================================================================
-           SEZIONE 4: RIEPILOGO GIORNATA E BARRA DI AVANZAMENTO A SEGMENTI
-           ====================================================================== -->
-      <section class="glass-card progress-section" aria-label="Riepilogo avanzamento giornaliero">
-        <div class="progress-header">
-          <span class="progress-title">
-            <span class="material-symbols-rounded">checklist</span>
-            Riepilogo Giornata
-          </span>
-          <span id="progress-fraction-badge" class="progress-fraction-badge">0 / 4 COMPLETATO</span>
-        </div>
-
-        <!-- Messaggio di stato che diventerà 'OBIETTIVI RAGGIUNTI!' a completamento -->
-        <p id="progress-message" class="progress-message">
-          Ti mancano 4 medicine da assumere oggi!
-        </p>
-
-        <!-- Barra di avanzamento segmentata: ogni medicina ha la sua barretta -->
-        <div id="segmented-progress-bar" class="segmented-progress-bar">
-          <!-- Generata dinamicamente dal JavaScript -->
-        </div>
-
-        <div class="progress-footer">
-          <span>Ultima sincronizzazione registro</span>
-          <span id="sync-timestamp" class="sync-timestamp">In attesa</span>
-        </div>
-      </section>
-    </main>
   </div>
 
   <!-- ==========================================================================
-       MODALE 1: AGGIUNGI NUOVA MEDICINA (FINO A 6 MEDICINE)
+       === CONTENITORE CENTRATO MOBILE-FIRST ===
        ========================================================================== -->
-  <div id="add-modal" class="modal-overlay">
-    <div class="modal-dialog">
-      <h3 class="modal-title">
-        <span class="material-symbols-rounded">add_circle</span>
-        Nuova Medicina
-      </h3>
-      <form id="add-form">
-        <div class="modal-form-group">
-          <label for="add-name">Nome della Medicina</label>
-          <input type="text" id="add-name" required placeholder="es. Ferro con Vitamina C">
+  <div class="app-container">
+
+    <!-- Header: Titolo Vitapp e sottotitolo -->
+    <header class="app-header">
+      <div class="brand-row">
+        <h1 class="brand-title">VITAPP</h1>
+        <span class="brand-badge">v1.0-MED</span>
+      </div>
+      <p class="brand-subtitle">Tracciamento farmaci & integratori &bull; Oggi, 24 Ottobre</p>
+    </header>
+
+    <main>
+      <!-- ==========================================================================
+           === SEZIONE 1: TIMELINE DELLE MEDICINE CON FORMA A ROMBO ===
+           ========================================================================== -->
+      <section class="timeline-section" aria-label="Timeline delle medicine">
+        <div class="section-header-row">
+          <div class="section-label">
+            <span class="section-indicator-dot"></span>
+            <span>Timeline Dosi</span>
+          </div>
+          <span class="counter-pill" id="plannedCounterBadge">4 PIANIFICATE</span>
         </div>
-        <div class="modal-form-group">
-          <label for="add-time">Orario di assunzione</label>
-          <input type="time" id="add-time" required value="08:30">
+
+        <!-- Traccia scorrevole con pulsanti delle medicine e pulsante "+" -->
+        <div class="rhombus-scroll-track" id="rhombusContainer"></div>
+      </section>
+
+      <!-- ==========================================================================
+           === SEZIONE 2: SCHEDA DETTAGLIO DELLA MEDICINA ATTIVA ===
+           ========================================================================== -->
+      <section class="detail-card" aria-label="Dettaglio della medicina selezionata">
+        <div class="detail-top-row">
+          <div class="section-label">
+            <span class="section-indicator-dot"></span>
+            <span>Dettaglio Dose</span>
+          </div>
+          <button type="button" class="detail-badge-pill" id="nextDoseBadge">
+            PROSSIMA DOSE: 08:30
+          </button>
         </div>
-        <div class="modal-form-group">
-          <label for="add-spec">Dose e Formato</label>
-          <input type="text" id="add-spec" placeholder="es. Dose: 14mg • Formato: Flaconcino">
+
+        <div class="detail-info-row">
+          <div class="detail-text-col">
+            <div class="detail-name-wrapper">
+              <h2 class="detail-title" id="activeMedName">Vitamina C + Zinco</h2>
+              <!-- Pulsante per modificare nome e dettagli della medicina -->
+              <button type="button" class="edit-med-btn" id="btnOpenEditModal" title="Modifica medicina">
+                <span class="material-symbols-rounded">edit</span>
+              </button>
+            </div>
+            <p class="detail-spec" id="activeMedSpec">Dose: 500mg &bull; Formato: Compressa idrosolubile</p>
+          </div>
+
+          <div class="detail-icon-circle">
+            <span class="material-symbols-rounded" id="activeMedIcon">pill</span>
+          </div>
         </div>
-        <div class="modal-form-group">
-          <label for="add-instruction">Istruzioni d'assunzione</label>
-          <input type="text" id="add-instruction" placeholder="es. Assumere lontano da tè o caffè">
+
+        <!-- Box Istruzioni d'assunzione -->
+        <div class="instructions-card">
+          <div class="instructions-header">
+            <span class="material-symbols-rounded" style="font-size: 16px;">info</span>
+            <span>Istruzioni d'assunzione</span>
+          </div>
+          <p class="instructions-body" id="activeMedInstruction">
+            Da assumere con la prima colazione in un bicchiere d'acqua abbondante.
+          </p>
         </div>
-        <div class="modal-actions">
-          <button type="button" id="btn-cancel-add" class="btn-modal-cancel">Annulla</button>
-          <button type="submit" class="btn-modal-submit">Aggiungi</button>
+      </section>
+
+      <!-- ==========================================================================
+           === SEZIONE 3: PULSANTI DI AZIONE (PRENDI ORA E SALTA DOSE) ===
+           ========================================================================== -->
+      <section class="actions-section" aria-label="Azioni sulla medicina">
+        <button type="button" class="btn-action-primary" id="btnTakeNow">
+          <span class="material-symbols-rounded">check_circle</span>
+          <span>Prendi Ora</span>
+        </button>
+
+        <button type="button" class="btn-action-secondary" id="btnSkipDose">
+          <span class="material-symbols-rounded">update_disabled</span>
+          <span>Salta Questa Dose</span>
+        </button>
+      </section>
+
+      <!-- ==========================================================================
+           === SEZIONE 4: RIEPILOGO GIORNATA E BARRA DI AVANZAMENTO ===
+           ========================================================================== */ -->
+      <section class="summary-card" aria-label="Riepilogo avanzamento giornaliero">
+        <div class="summary-header-row">
+          <div class="summary-label">
+            <span class="material-symbols-rounded" style="color: var(--color-primary); font-size: 18px;">checklist</span>
+            <span>Riepilogo Giornata</span>
+          </div>
+          <span class="summary-counter-badge" id="progressFractionBadge">0 / 4 COMPLETATO</span>
+        </div>
+
+        <!-- Messaggio dinamico: mostra "OBIETTIVI RAGGIUNTI!" a giornata completata -->
+        <p class="summary-message" id="summaryStatusMessage">
+          Ti mancano tutte e 4 le medicine da assumere!
+        </p>
+
+        <!-- Segmenti proporzionali della barra di progresso -->
+        <div class="progress-bar-container" id="progressBarContainer"></div>
+
+        <div class="summary-footer">
+          <span>Ultima sincronizzazione registro</span>
+          <span class="sync-timestamp" id="syncTimestamp">Oggi, 11:30</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer di chiusura -->
+    <footer class="app-footer">
+      <span>SCHERMATA VITAPP</span>
+      <span>WARM RADIANT HEALTH</span>
+    </footer>
+  </div>
+
+  <!-- ==========================================================================
+       === MODAL 1: AGGIUNGI MEDICINA (MASSIMO 6) ===
+       ========================================================================== -->
+  <div class="modal-overlay" id="addModalOverlay">
+    <div class="modal-card">
+      <div class="modal-handle"></div>
+      <div class="modal-header-row">
+        <h3 class="modal-title">
+          <span class="material-symbols-rounded" style="color: var(--color-primary);">add_circle</span>
+          <span>Aggiungi Nuova Medicina</span>
+        </h3>
+        <button type="button" class="btn-close-modal" id="btnCloseAddModal">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+
+      <form id="addMedForm">
+        <div class="form-group">
+          <label class="form-label" for="addMedName">Nome Medicina o Integratore</label>
+          <input class="form-input" id="addMedName" type="text" placeholder="Es. Vitamina D3, Ferro..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="addMedTime">Orario di Notifica / Assunzione</label>
+          <input class="form-input" id="addMedTime" type="time" value="12:00" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="addMedSpec">Formato e Dosaggio</label>
+          <input class="form-input" id="addMedSpec" type="text" placeholder="Es. Dose: 1 compressa • Con acqua">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="addMedInstruction">Istruzioni d'assunzione</label>
+          <textarea class="form-textarea" id="addMedInstruction" placeholder="Es. Da assumere prima del pasto principale."></textarea>
+        </div>
+
+        <div class="modal-actions-row">
+          <button type="button" class="btn-modal-cancel" id="btnCancelAdd">Annulla</button>
+          <button type="submit" class="btn-modal-submit">Salva Medicina</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- ==========================================================================
-       MODALE 2: MODIFICA NOME E DETTAGLI MEDICINA SELEZIONATA
+       === MODAL 2: MODIFICA NOME E ISTRUZIONI MEDICINA ===
        ========================================================================== -->
-  <div id="edit-modal" class="modal-overlay">
-    <div class="modal-dialog">
-      <h3 class="modal-title">
-        <span class="material-symbols-rounded">edit</span>
-        Modifica Medicina
-      </h3>
-      <form id="edit-form">
-        <div class="modal-form-group">
-          <label for="edit-name">Nome Medicina</label>
-          <input type="text" id="edit-name" required>
+  <div class="modal-overlay" id="editModalOverlay">
+    <div class="modal-card">
+      <div class="modal-handle"></div>
+      <div class="modal-header-row">
+        <h3 class="modal-title">
+          <span class="material-symbols-rounded" style="color: var(--color-primary);">edit_note</span>
+          <span>Modifica Medicina</span>
+        </h3>
+        <button type="button" class="btn-close-modal" id="btnCloseEditModal">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+
+      <form id="editMedForm">
+        <div class="form-group">
+          <label class="form-label" for="editMedName">Nome Medicina</label>
+          <input class="form-input" id="editMedName" type="text" required>
         </div>
-        <div class="modal-form-group">
-          <label for="edit-time">Orario Assunzione</label>
-          <input type="time" id="edit-time" required>
+
+        <div class="form-group">
+          <label class="form-label" for="editMedTime">Orario di Assunzione</label>
+          <input class="form-input" id="editMedTime" type="time" required>
         </div>
-        <div class="modal-form-group">
-          <label for="edit-spec">Dose e Formato</label>
-          <input type="text" id="edit-spec">
+
+        <div class="form-group">
+          <label class="form-label" for="editMedSpec">Formato e Dosaggio</label>
+          <input class="form-input" id="editMedSpec" type="text">
         </div>
-        <div class="modal-form-group">
-          <label for="edit-instruction">Istruzioni</label>
-          <input type="text" id="edit-instruction">
+
+        <div class="form-group">
+          <label class="form-label" for="editMedInstruction">Istruzioni d'assunzione</label>
+          <textarea class="form-textarea" id="editMedInstruction"></textarea>
         </div>
-        <div class="modal-actions">
-          <button type="button" id="btn-cancel-edit" class="btn-modal-cancel">Annulla</button>
+
+        <div class="modal-actions-row">
+          <button type="button" class="btn-modal-cancel" id="btnCancelEdit">Annulla</button>
           <button type="submit" class="btn-modal-submit">Salva Modifiche</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Script JavaScript esterno -->
+  <!-- Collegamento allo Script JavaScript Esterno -->
   <script src="script.js"></script>
 </body>
-
 </html>

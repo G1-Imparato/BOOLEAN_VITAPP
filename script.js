@@ -1,583 +1,494 @@
-/* === STATO INIZIALE DELL'APPLICAZIONE (ARRAY MEDICINE) === */
-// Ogni medicina ha un orario, nome, dettagli, icona e uno stato:
-// 'pending' (non ancora presa), 'taken' (presa), 'skipped' (saltata)
-const medicines = [
+/* ==========================================================================
+   === STATO INIZIALE DELL'APPLICAZIONE ===
+   ========================================================================== */
+// Array con l'elenco delle medicine della giornata
+let doses = [
   {
     id: 1,
-    time: "12:45",
     name: "Vitamina C + Zinco",
+    time: "08:30",
     spec: "Dose: 500mg • Formato: Compressa idrosolubile",
-    instruction: "Da assumere dopo il pranzo con un bicchiere d'acqua. Evitare a stomaco vuoto.",
+    instruction: "Da assumere con la prima colazione in un bicchiere d'acqua abbondante.",
     icon: "pill",
-    interval: "3 ore dal pasto",
-    stock: "24 dosi rimanenti",
-    status: "pending"
+    status: "pending" // Valori possibili: 'pending' (in attesa), 'taken' (presa), 'skipped' (saltata)
   },
   {
     id: 2,
-    time: "14:30",
     name: "Collagene & Biotina",
+    time: "14:30",
     spec: "Dose: 2500mg • Formato: Bustina orosolubile",
-    instruction: "Sciogliere la bustina in mezzo bicchiere di liquido subito dopo il pasto.",
+    instruction: "Sciogliere la bustina in mezzo bicchiere di latte o bevanda vegetale dopo pranzo.",
     icon: "medication",
-    interval: "2 ore dal pasto",
-    stock: "12 bustine rimanenti",
     status: "pending"
   },
   {
     id: 3,
-    time: "20:00",
     name: "Omega 3 Skincare",
+    time: "20:00",
     spec: "Dose: 1000mg EPA/DHA • Formato: Perla softgel",
-    instruction: "Assumere a inizio cena con acqua fresca per un migliore assorbimento lipidico.",
+    instruction: "Assumere a inizio cena con liquidi freschi per favorire l'assorbimento.",
     icon: "healing",
-    interval: "Durante la cena",
-    stock: "30 perle rimanenti",
     status: "pending"
   },
   {
     id: 4,
-    time: "22:15",
     name: "Magnesio Notte",
+    time: "22:15",
     spec: "Dose: 300mg • Formato: Polvere solubile calda",
-    instruction: "Assumere 30 minuti prima di coricarsi in acqua tiepida per favorire il riposo.",
+    instruction: "Assumere 30 minuti prima di coricarsi sciolto in acqua tiepida.",
     icon: "bedtime",
-    interval: "4 ore dal pasto",
-    stock: "18 dosi rimanenti",
     status: "pending"
   }
 ];
 
-// Indice della medicina attualmente selezionata
-let selectedIndex = 0;
+// Indice dell'elemento correntemente selezionato
+let selectedDoseIndex = 0;
 
-// Set per memorizzare le notifiche già inviate per evitare duplicati nello stesso minuto
-const sentNotifications = new Set();
-
-/* === ELEMENTI DOM PRINCIPALI === */
-const timelineStrip = document.querySelector("#timeline-scroll-strip");
-const timelineCountBadge = document.querySelector("#timeline-count-badge");
-const detailTargetBadge = document.querySelector("#detail-target-badge");
-const detailMedName = document.querySelector("#detail-med-name");
-const detailMedSpec = document.querySelector("#detail-med-spec");
-const detailMedIcon = document.querySelector("#detail-med-icon");
-const detailMedInstruction = document.querySelector("#detail-med-instruction");
-const detailMedInterval = document.querySelector("#detail-med-interval");
-const detailMedStock = document.querySelector("#detail-med-stock");
-
-const btnTakeNow = document.querySelector("#btn-take-now");
-const takeBtnText = document.querySelector("#take-btn-text");
-const takeBtnIcon = document.querySelector("#take-btn-icon");
-const btnSkipDose = document.querySelector("#btn-skip-dose");
-const skipBtnText = document.querySelector("#skip-btn-text");
-
-const progressFractionBadge = document.querySelector("#progress-fraction-badge");
-const progressMessage = document.querySelector("#progress-message");
-const segmentedProgressBar = document.querySelector("#segmented-progress-bar");
-const syncTimestamp = document.querySelector("#sync-timestamp");
-
-// Elementi di Notifica
-const phoneNotification = document.querySelector("#phone-notification");
-const notifBody = document.querySelector("#notif-body");
-const notifTime = document.querySelector("#notif-time");
-const btnTriggerNotification = document.querySelector("#btn-trigger-notification");
-
-// Modali
-const addModal = document.querySelector("#add-modal");
-const addForm = document.querySelector("#add-form");
-const btnCancelAdd = document.querySelector("#btn-cancel-add");
-
-const editModal = document.querySelector("#edit-modal");
-const editForm = document.querySelector("#edit-form");
-const btnOpenEditModal = document.querySelector("#btn-open-edit-modal");
-const btnCancelEdit = document.querySelector("#btn-cancel-edit");
+// Timer per la chiusura automatica del banner notifica
+let notificationTimer = null;
 
 /* ==========================================================================
-   FUNZIONI AUSILIARIE PER ANIMAZIONI E FEEDBACK VISIVO (INTERATTIVITÀ)
+   === SELETTORI DEGLI ELEMENTI DOM ===
    ========================================================================== */
+const rhombusContainer = document.querySelector("#rhombusContainer");
+const plannedCounterBadge = document.querySelector("#plannedCounterBadge");
+const nextDoseBadge = document.querySelector("#nextDoseBadge");
 
-// Crea l'effetto onda (ripple) nel punto esatto del click
-function createRipple(event, element) {
-  const rect = element.getBoundingClientRect();
-  const circle = document.createElement("span");
-  const diameter = Math.max(rect.width, rect.height);
-  const radius = diameter / 2;
+const activeMedName = document.querySelector("#activeMedName");
+const activeMedSpec = document.querySelector("#activeMedSpec");
+const activeMedInstruction = document.querySelector("#activeMedInstruction");
+const activeMedIcon = document.querySelector("#activeMedIcon");
 
-  const clickX = (event.clientX && event.clientX > 0) ? (event.clientX - rect.left) : (rect.width / 2);
-  const clickY = (event.clientY && event.clientY > 0) ? (event.clientY - rect.top) : (rect.height / 2);
+const btnTakeNow = document.querySelector("#btnTakeNow");
+const btnSkipDose = document.querySelector("#btnSkipDose");
 
-  circle.style.width = circle.style.height = `${diameter}px`;
-  circle.style.left = `${clickX - radius}px`;
-  circle.style.top = `${clickY - radius}px`;
-  circle.classList.add("ripple-circle");
+const progressFractionBadge = document.querySelector("#progressFractionBadge");
+const summaryStatusMessage = document.querySelector("#summaryStatusMessage");
+const progressBarContainer = document.querySelector("#progressBarContainer");
+const syncTimestamp = document.querySelector("#syncTimestamp");
 
-  const existingRipple = element.querySelector(".ripple-circle");
-  if (existingRipple) {
-    existingRipple.remove();
-  }
+// Elementi notifica stile smartphone
+const phoneNotification = document.querySelector("#phoneNotification");
+const notifTime = document.querySelector("#notifTime");
+const notifTitle = document.querySelector("#notifTitle");
+const notifDesc = document.querySelector("#notifDesc");
 
-  element.appendChild(circle);
-  setTimeout(() => circle.remove(), 600);
-}
+// Elementi finestra modale "Aggiungi"
+const addModalOverlay = document.querySelector("#addModalOverlay");
+const btnCloseAddModal = document.querySelector("#btnCloseAddModal");
+const btnCancelAdd = document.querySelector("#btnCancelAdd");
+const addMedForm = document.querySelector("#addMedForm");
 
-// Innesca il rimbalzo elastico (micro-bounce) su qualunque pulsante
-function triggerButtonBounce(element) {
-  element.classList.remove("btn-bouncing");
-  void element.offsetWidth; // forza il reflow
-  element.classList.add("btn-bouncing");
-  setTimeout(() => element.classList.remove("btn-bouncing"), 400);
-}
-
-// Innesca il fascio di luce Shimmer sopra la scheda dettaglio
-function triggerCardShimmer() {
-  const shimmer = document.querySelector("#card-shimmer");
-  if (!shimmer) return;
-  shimmer.classList.remove("trigger-shimmer");
-  void shimmer.offsetWidth; // forza il reflow per riavviare l'animazione
-  shimmer.classList.add("trigger-shimmer");
-}
-
-// Suono delicato di notifica smartphone tramite Web Audio API nativo
-function playNotificationSound() {
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = "sine";
-    // Suono a due toni caldo e delicato tipico degli smartphone (Re5 -> La5)
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-    osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12);
-
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.55);
-  } catch (error) {
-    // Gestione silenziosa se l'audio è bloccato dal browser
-  }
-}
+// Elementi finestra modale "Modifica"
+const editModalOverlay = document.querySelector("#editModalOverlay");
+const btnOpenEditModal = document.querySelector("#btnOpenEditModal");
+const btnCloseEditModal = document.querySelector("#btnCloseEditModal");
+const btnCancelEdit = document.querySelector("#btnCancelEdit");
+const editMedForm = document.querySelector("#editMedForm");
 
 /* ==========================================================================
-   SISTEMA DI NOTIFICA ORARIA AUTOMATICA
+   === FUNZIONE: NOTIFICA TELEFONO (PROMEMORIA ORARIO SVEGLIA) ===
    ========================================================================== */
+function showPhoneNotification(title, message, timeText) {
+  if (notificationTimer) {
+    clearTimeout(notificationTimer);
+  }
 
-// Mostra il banner della notifica sul telefono
-function showPhoneNotification(medName, medTime) {
-  playNotificationSound();
-  notifTime.textContent = medTime;
-  notifBody.textContent = "È ora di prendere: " + medName;
+  notifTitle.textContent = title;
+  notifDesc.textContent = message;
+  notifTime.textContent = timeText || "ADESSO";
+
   phoneNotification.classList.add("show");
 
-  // Chiudi la notifica automaticamente dopo 5 secondi
-  setTimeout(function() {
-    phoneNotification.classList.remove("show");
-  }, 5000);
-
-  // Supporto opzionale per la notifica nativa del sistema operativo/telefono
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification("VITAPP Promemoria", {
-      body: medTime + " - È ora di assumere: " + medName,
-      icon: ""
-    });
-  }
-}
-
-// Controlla ogni secondo l'orario reale del dispositivo
-// Le notifiche partono SOLO ed ESCLUSIVAMENTE quando l'orario corrisponde a quello prefissato
-function checkScheduledNotifications() {
-  const now = new Date();
-  const currentHours = String(now.getHours()).padStart(2, "0");
-  const currentMinutes = String(now.getMinutes()).padStart(2, "0");
-  const currentTime = `${currentHours}:${currentMinutes}`;
-
-  medicines.forEach(function(med, index) {
-    // Chiave univoca per non ripetere la notifica nello stesso minuto
-    const notificationKey = `${med.id}-${currentTime}`;
-
-    // La notifica scatta SOLO se l'orario è esattamente uguale e la medicina non è ancora stata presa
-    if (med.time === currentTime && med.status === "pending" && !sentNotifications.has(notificationKey)) {
-      sentNotifications.add(notificationKey);
-      showPhoneNotification(med.name, med.time);
-
-      // Seleziona automaticamente la medicina che sta suonando
-      selectDose(index);
-    }
-  });
-}
-
-// Avvia il monitoraggio dell'orario ogni 1000 millisecondi (1 secondo)
-setInterval(checkScheduledNotifications, 1000);
-
-/* === FUNZIONE: AGGIORNA LA SCHEDA DETTAGLIO DELLA MEDICINA SELEZIONATA === */
-function renderDetailCard() {
-  const currentMed = medicines[selectedIndex];
-  if (!currentMed) return;
-
-  detailMedName.textContent = currentMed.name;
-  detailMedSpec.textContent = currentMed.spec || "Dose standard personalizzata";
-  detailMedInstruction.textContent = currentMed.instruction || "Assumere secondo prescrizione.";
-  detailMedIcon.textContent = currentMed.icon || "pill";
-  detailTargetBadge.textContent = "ORARIO TARGET: " + currentMed.time;
-  detailMedInterval.textContent = currentMed.interval || "Non specificato";
-  detailMedStock.textContent = currentMed.stock || "In corso";
-
-  // Aggiorna lo stato visivo del pulsante "PRENDI ORA"
-  if (currentMed.status === "taken") {
-    takeBtnText.textContent = "GIÀ PRESA (CLICCA PER ANNULLARE)";
-    if (takeBtnIcon) takeBtnIcon.textContent = "done_all";
-    btnTakeNow.classList.add("already-taken");
-  } else {
-    takeBtnText.textContent = "PRENDI ORA";
-    if (takeBtnIcon) takeBtnIcon.textContent = "check_circle";
-    btnTakeNow.classList.remove("already-taken");
-  }
-}
-
-/* === FUNZIONE: AGGIORNA LA BARRA DI AVANZAMENTO E I MESSAGGI === */
-function renderProgress() {
-  const total = medicines.length;
-  // Conta quante medicine sono state effettivamente prese
-  let takenCount = 0;
-  for (let i = 0; i < medicines.length; i++) {
-    if (medicines[i].status === "taken") {
-      takenCount++;
-    }
+  // Vibrazione se supportata dal dispositivo
+  if ("vibrate" in navigator) {
+    navigator.vibrate([100, 50, 100]);
   }
 
-  // Aggiorna badge frazione (es. "2 / 4 COMPLETATO")
-  progressFractionBadge.textContent = takenCount + " / " + total + " COMPLETATO";
-
-  // Verifica se la giornata è completata (tutte le medicine prese)
-  if (takenCount === total && total > 0) {
-    progressMessage.textContent = "OBIETTIVI RAGGIUNTI!";
-    progressMessage.classList.add("goals-completed");
-  } else {
-    progressMessage.classList.remove("goals-completed");
-    const remaining = total - takenCount;
-    if (remaining === 1) {
-      progressMessage.textContent = "Ti manca solo 1 medicina per completare il piano di oggi!";
-    } else {
-      progressMessage.textContent = "Ti mancano " + remaining + " medicine da assumere oggi!";
-    }
-  }
-
-  // Ricrea i segmenti della barra di avanzamento con animazione fluida
-  segmentedProgressBar.innerHTML = "";
-  for (let i = 0; i < total; i++) {
-    const segment = document.createElement("div");
-    segment.className = "progress-segment";
-
-    const fill = document.createElement("div");
-    fill.className = "progress-segment-fill";
-
-    // Se la medicina i-esima è stata presa, riempi il segmento al 100%
-    if (medicines[i].status === "taken") {
-      segment.classList.add("is-filled");
-      setTimeout(() => {
-        fill.style.width = "100%";
-      }, 50);
-    } else {
-      fill.style.width = "0%";
-    }
-
-    segment.appendChild(fill);
-    segmentedProgressBar.appendChild(segment);
-  }
-}
-
-/* === FUNZIONE: SELEZIONE FLUIDA DI UNA MEDICINA CON TRANSIZIONE === */
-// NOTA: il semplice click di selezione NON fa scattare la notifica (arriva solo all'orario prefissato)
-function selectDose(index) {
-  if (index === selectedIndex) {
-    triggerCardShimmer();
-    return;
-  }
-  selectedIndex = index;
-
-  const cardBody = document.querySelector("#detail-card-body");
-  if (cardBody) {
-    // Sfumatura di uscita
-    cardBody.classList.add("content-hidden");
-
-    setTimeout(() => {
-      renderApp();
-      // Sfumatura di entrata e fascio di luce
-      cardBody.classList.remove("content-hidden");
-      triggerCardShimmer();
-    }, 150);
-  } else {
-    renderApp();
-    triggerCardShimmer();
-  }
-}
-
-/* === FUNZIONE: RENDERIZZA LA TIMELINE DELLE MEDICINE CON I ROMBI === */
-function renderTimeline() {
-  timelineStrip.innerHTML = "";
-  timelineCountBadge.textContent = medicines.length + " PIANIFICATE";
-
-  // Crea ogni singolo slot medicina
-  medicines.forEach(function(med, index) {
-    const slotBtn = document.createElement("button");
-    slotBtn.type = "button";
-    slotBtn.className = "medicine-slot-btn btn-ripple";
-    
-    // Assegna classi di stato
-    if (index === selectedIndex) {
-      slotBtn.classList.add("is-active");
-    }
-    if (med.status === "taken") {
-      slotBtn.classList.add("is-taken");
-    } else if (med.status === "skipped") {
-      slotBtn.classList.add("is-skipped");
-    }
-
-    // Determina testo di stato
-    let statusText = "In programma";
-    if (med.status === "taken") statusText = "Presa ✓";
-    if (med.status === "skipped") statusText = "Saltata";
-    if (index === selectedIndex && med.status === "pending") statusText = "Attiva";
-
-    slotBtn.innerHTML = `
-      <div class="rhombus-wrapper">
-        <div class="rhombus-shape"></div>
-        <span class="material-symbols-rounded rhombus-icon">${med.icon || 'pill'}</span>
-      </div>
-      <span class="slot-time-badge">${med.time}</span>
-      <span class="slot-medicine-name">${med.name}</span>
-      <span class="slot-status-label">${statusText}</span>
-    `;
-
-    // Interazione 1: Cliccando la medicina viene selezionata con ripple e bounce
-    slotBtn.addEventListener("click", function(event) {
-      createRipple(event, slotBtn);
-      triggerButtonBounce(slotBtn);
-      selectDose(index);
-    });
-
-    timelineStrip.appendChild(slotBtn);
-  });
-
-  // Interazione 7: Aggiungi pulsante "+" in fondo se ci sono meno di 6 medicine
-  if (medicines.length < 6) {
-    const addBtn = document.createElement("button");
-    addBtn.type = "button";
-    addBtn.className = "add-slot-btn btn-ripple";
-    addBtn.setAttribute("aria-label", "Aggiungi medicina");
-    addBtn.innerHTML = `
-      <div class="rhombus-wrapper">
-        <div class="rhombus-shape"></div>
-        <span class="material-symbols-rounded rhombus-icon">add</span>
-      </div>
-      <span class="slot-time-badge">+ AGGIUNGI</span>
-      <span class="slot-medicine-name">Nuova</span>
-      <span class="slot-status-label">Max 6</span>
-    `;
-
-    addBtn.addEventListener("click", function(event) {
-      createRipple(event, addBtn);
-      triggerButtonBounce(addBtn);
-      addModal.classList.add("is-open");
-    });
-
-    timelineStrip.appendChild(addBtn);
-  }
-}
-
-/* === FUNZIONE GENERALE DI AGGIORNAMENTO DELL'APP === */
-function renderApp() {
-  renderTimeline();
-  renderDetailCard();
-  renderProgress();
-}
-
-/* === GESTIONE EVENTI: PULSANTI "PRENDI ORA" & "SALTA QUESTA DOSE" === */
-// Interazione 2 & 3: Prendere la medicina riempie la barra; tornando indietro si può modificare
-btnTakeNow.addEventListener("click", function(event) {
-  createRipple(event, btnTakeNow);
-  triggerButtonBounce(btnTakeNow);
-
-  const currentMed = medicines[selectedIndex];
-  if (!currentMed) return;
-
-  // Se era già presa, consente di annullare (tornando indietro e modificando)
-  if (currentMed.status === "taken") {
-    currentMed.status = "pending";
-    renderApp();
-    triggerCardShimmer();
-  } else {
-    currentMed.status = "taken";
-
-    // Registra timestamp
-    const now = new Date();
-    const hrs = String(now.getHours()).padStart(2, "0");
-    const mins = String(now.getMinutes()).padStart(2, "0");
-    syncTimestamp.textContent = "Oggi, " + hrs + ":" + mins;
-
-    // Feedback visivo immediato di successo
-    if (takeBtnIcon) takeBtnIcon.textContent = "done_all";
-    takeBtnText.textContent = "REGISTRATO CON SUCCESSO!";
-    triggerCardShimmer();
-
-    setTimeout(() => {
-      renderApp();
-    }, 800);
-    return;
-  }
-});
-
-// Se clicco salta, la medicina viene marcata come saltata e la barra non si riempie
-btnSkipDose.addEventListener("click", function(event) {
-  createRipple(event, btnSkipDose);
-  triggerButtonBounce(btnSkipDose);
-
-  const currentMed = medicines[selectedIndex];
-  if (!currentMed) return;
-
-  const originalText = skipBtnText ? skipBtnText.textContent : "SALTA QUESTA DOSE";
-  if (skipBtnText) skipBtnText.textContent = "DOSE RIMANDATA";
-
-  currentMed.status = "skipped";
-  renderProgress();
-  renderTimeline();
-
-  setTimeout(() => {
-    if (skipBtnText) skipBtnText.textContent = originalText;
-    // Passa comodamente alla prossima medicina con transizione fluida
-    if (selectedIndex < medicines.length - 1) {
-      selectDose(selectedIndex + 1);
-    } else {
-      selectDose(0);
-    }
-  }, 450);
-});
-
-/* === GESTIONE EVENTI: PULSANTE CAMPANELLA NOTIFICA DALL'HEADER === */
-btnTriggerNotification.addEventListener("click", function(event) {
-  createRipple(event, btnTriggerNotification);
-  triggerButtonBounce(btnTriggerNotification);
-
-  // Chiedi i permessi browser se l'utente desidera notifiche reali di sistema
-  if ("Notification" in window && Notification.permission !== "granted") {
-    Notification.requestPermission();
-  }
-
-  // Mostra un avviso informativo che spiega l'orario della prossima medicina
-  const currentMed = medicines[selectedIndex];
-  notifTime.textContent = currentMed.time;
-  notifBody.textContent = "Notifica attiva alle " + currentMed.time + " per " + currentMed.name;
-  phoneNotification.classList.add("show");
-
-  setTimeout(() => {
+  // Rimozione automatica dopo 3.5 secondi
+  notificationTimer = setTimeout(function() {
     phoneNotification.classList.remove("show");
   }, 3500);
-});
+}
 
-// Chiudi la notifica toccandola
 phoneNotification.addEventListener("click", function() {
   phoneNotification.classList.remove("show");
 });
 
-/* === GESTIONE EVENTI: AGGIUNTA NUOVA MEDICINA (FINO A 6) === */
-btnCancelAdd.addEventListener("click", function(event) {
-  triggerButtonBounce(btnCancelAdd);
-  addModal.classList.remove("is-open");
-});
+/* ==========================================================================
+   === FUNZIONE: RENDER DELLA TIMELINE DELLE MEDICINE (ROMBI) ===
+   ========================================================================== */
+function renderTimeline() {
+  rhombusContainer.innerHTML = "";
 
-addForm.addEventListener("submit", function(event) {
-  event.preventDefault();
+  // Generazione dei rombi per ciascuna medicina registrata
+  doses.forEach(function(dose, index) {
+    const isSelected = (index === selectedDoseIndex);
+    const isTaken = (dose.status === "taken");
+    const isSkipped = (dose.status === "skipped");
 
-  if (medicines.length >= 6) {
-    alert("Puoi inserire un massimo di 6 medicine.");
-    addModal.classList.remove("is-open");
+    const itemBtn = document.createElement("button");
+    itemBtn.type = "button";
+    itemBtn.className = "rhombus-item";
+
+    if (isSelected) {
+      itemBtn.classList.add("selected");
+    }
+    if (isTaken) {
+      itemBtn.classList.add("taken");
+    }
+
+    let statusLabel = "IN ATTESA";
+    if (isTaken) {
+      statusLabel = "PRESA";
+    } else if (isSkipped) {
+      statusLabel = "SALTATA";
+    } else if (isSelected) {
+      statusLabel = "IN CORSO";
+    }
+
+    itemBtn.innerHTML = `
+      <div class="rhombus-box">
+        <div class="rhombus-diamond"></div>
+        <div class="rhombus-icon-wrapper">
+          <span class="material-symbols-rounded">${dose.icon || 'pill'}</span>
+        </div>
+      </div>
+      <span class="rhombus-time">${dose.time}</span>
+      <p class="rhombus-name">${dose.name}</p>
+      <span class="rhombus-status-tag">${statusLabel}</span>
+    `;
+
+    // Click sulla medicina: la seleziona e fa comparire la notifica del suo orario
+    itemBtn.addEventListener("click", function() {
+      selectDose(index);
+      showPhoneNotification(
+        "Promemoria: " + dose.name,
+        "Orario programmato: " + dose.time + ". Tocca 'Prendi Ora' per registrare.",
+        dose.time
+      );
+    });
+
+    rhombusContainer.appendChild(itemBtn);
+  });
+
+  // Se ci sono meno di 6 medicine, mostra il pulsante a rombo "+" in fondo a destra
+  if (doses.length < 6) {
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "rhombus-item add-new-btn";
+    addBtn.innerHTML = `
+      <div class="rhombus-box">
+        <div class="rhombus-diamond"></div>
+        <div class="rhombus-icon-wrapper">
+          <span class="material-symbols-rounded">add</span>
+        </div>
+      </div>
+      <span class="rhombus-time">NUOVA</span>
+      <p class="rhombus-name">Aggiungi</p>
+      <span class="rhombus-status-tag">+ MEDICINA</span>
+    `;
+    addBtn.addEventListener("click", openAddModal);
+    rhombusContainer.appendChild(addBtn);
+  }
+
+  plannedCounterBadge.textContent = doses.length + " PIANIFICATE";
+}
+
+/* ==========================================================================
+   === FUNZIONE: SELEZIONE E AGGIORNAMENTO SCHEDA DETTAGLIO ===
+   ========================================================================== */
+function selectDose(index) {
+  if (index < 0 || index >= doses.length) return;
+  selectedDoseIndex = index;
+  const currentDose = doses[selectedDoseIndex];
+
+  activeMedName.textContent = currentDose.name;
+  activeMedSpec.textContent = currentDose.spec || "Dose personalizzata per oggi";
+  activeMedInstruction.textContent = currentDose.instruction || "Assumere secondo le indicazioni mediche.";
+  activeMedIcon.textContent = currentDose.icon || "pill";
+
+  updateNextDoseBadge();
+  renderTimeline();
+}
+
+function updateNextDoseBadge() {
+  const allCompleted = doses.length > 0 && doses.every(function(d) {
+    return d.status === "taken";
+  });
+
+  if (allCompleted) {
+    nextDoseBadge.textContent = "OBIETTIVO RAGGIUNTO!";
+    nextDoseBadge.style.background = "linear-gradient(135deg, var(--color-primary-container), var(--color-primary))";
+    nextDoseBadge.style.color = "#ffffff";
     return;
   }
 
-  const newName = document.querySelector("#add-name").value.trim();
-  const newTime = document.querySelector("#add-time").value;
-  const newSpec = document.querySelector("#add-spec").value.trim() || "Dose standard";
-  const newInstruction = document.querySelector("#add-instruction").value.trim() || "Assumere con regolarità.";
+  nextDoseBadge.style.background = "";
+  nextDoseBadge.style.color = "";
 
-  // Aggiungi nuova medicina all'array
-  medicines.push({
-    id: Date.now(),
-    time: newTime,
-    name: newName,
-    spec: newSpec,
-    instruction: newInstruction,
-    icon: "medication",
-    interval: "Come da indicazioni",
-    stock: "Nuova scorta",
-    status: "pending"
+  const nextPending = doses.find(function(d) {
+    return d.status !== "taken";
   });
 
-  // Seleziona la medicina appena aggiunta
-  selectedIndex = medicines.length - 1;
+  if (nextPending) {
+    nextDoseBadge.textContent = "PROSSIMA DOSE: " + nextPending.time;
+  } else {
+    nextDoseBadge.textContent = "DOSI COMPLETATE";
+  }
+}
 
-  addForm.reset();
-  addModal.classList.remove("is-open");
-  renderApp();
-  triggerCardShimmer();
+nextDoseBadge.addEventListener("click", function() {
+  const currentDose = doses[selectedDoseIndex];
+  showPhoneNotification(
+    "Promemoria: " + currentDose.name,
+    "Orario di assunzione: " + currentDose.time,
+    currentDose.time
+  );
 });
 
-/* === GESTIONE EVENTI: MODIFICA MEDICINA ESISTENTE === */
-// Interazione 6: i nomi, descrizioni e orari possono essere modificati
-btnOpenEditModal.addEventListener("click", function(event) {
-  createRipple(event, btnOpenEditModal);
-  triggerButtonBounce(btnOpenEditModal);
+/* ==========================================================================
+   === FUNZIONE: AZIONI "PRENDI ORA" E "SALTA QUESTA DOSE" ===
+   ========================================================================== */
+function handleTakeDose() {
+  if (doses.length === 0) return;
 
-  const currentMed = medicines[selectedIndex];
-  if (!currentMed) return;
+  const currentDose = doses[selectedDoseIndex];
+  // Registra lo stato come 'taken': la barra si riempirà
+  currentDose.status = "taken";
 
-  document.querySelector("#edit-name").value = currentMed.name;
-  document.querySelector("#edit-time").value = currentMed.time;
-  document.querySelector("#edit-spec").value = currentMed.spec;
-  document.querySelector("#edit-instruction").value = currentMed.instruction;
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  syncTimestamp.textContent = "Oggi, " + hours + ":" + minutes;
 
-  editModal.classList.add("is-open");
-});
+  updateProgress();
+  updateNextDoseBadge();
 
-btnCancelEdit.addEventListener("click", function() {
-  triggerButtonBounce(btnCancelEdit);
-  editModal.classList.remove("is-open");
-});
+  showPhoneNotification(
+    "Dose Registrata!",
+    currentDose.name + " è stata segnata come assunta.",
+    hours + ":" + minutes
+  );
 
-editForm.addEventListener("submit", function(event) {
+  // Avanzamento automatico alla medicina successiva non ancora assunta
+  const nextPendingIndex = doses.findIndex(function(d, idx) {
+    return idx > selectedDoseIndex && d.status !== "taken";
+  });
+
+  if (nextPendingIndex !== -1) {
+    selectedDoseIndex = nextPendingIndex;
+  }
+
+  selectDose(selectedDoseIndex);
+}
+
+function handleSkipDose() {
+  if (doses.length === 0) return;
+
+  const currentDose = doses[selectedDoseIndex];
+  // Registra lo stato come 'skipped': la barra di avanzamento non si riempie
+  currentDose.status = "skipped";
+
+  updateProgress();
+  updateNextDoseBadge();
+
+  showPhoneNotification(
+    "Dose Rimandata",
+    currentDose.name + " è stata saltata per oggi.",
+    currentDose.time
+  );
+
+  if (selectedDoseIndex < doses.length - 1) {
+    selectDose(selectedDoseIndex + 1);
+  } else {
+    renderTimeline();
+  }
+}
+
+btnTakeNow.addEventListener("click", handleTakeDose);
+btnSkipDose.addEventListener("click", handleSkipDose);
+
+/* ==========================================================================
+   === FUNZIONE: CALCOLO PROGRESSO E BARRA DINAMICA ===
+   ========================================================================== */
+function updateProgress() {
+  const totalCount = doses.length;
+  // Conta quante medicine hanno lo stato 'taken'
+  const takenCount = doses.filter(function(d) {
+    return d.status === "taken";
+  }).length;
+
+  progressFractionBadge.textContent = takenCount + " / " + totalCount + " COMPLETATO";
+
+  // Rigenera i segmenti della barra
+  progressBarContainer.innerHTML = "";
+  for (let i = 0; i < totalCount; i++) {
+    const segment = document.createElement("div");
+    segment.className = "progress-segment";
+
+    const fill = document.createElement("div");
+    fill.className = "progress-fill";
+    segment.appendChild(fill);
+
+    // Se la medicina è stata presa, il segmento si colora
+    if (doses[i].status === "taken") {
+      segment.classList.add("filled");
+    }
+
+    progressBarContainer.appendChild(segment);
+  }
+
+  const remainingCount = totalCount - takenCount;
+
+  if (totalCount === 0) {
+    summaryStatusMessage.textContent = "Nessuna medicina registrata.";
+    summaryStatusMessage.classList.remove("celebrate");
+  } else if (remainingCount === 0) {
+    // A giornata completata compare OBIETTIVI RAGGIUNTI!
+    summaryStatusMessage.innerHTML = `
+      <span class="material-symbols-rounded" style="color: var(--color-primary); font-size: 20px;">emoji_events</span>
+      <span>OBIETTIVI RAGGIUNTI!</span>
+    `;
+    summaryStatusMessage.classList.add("celebrate");
+
+    showPhoneNotification(
+      "OBIETTIVI RAGGIUNTI!",
+      "Complimenti! Tutte le medicine di oggi sono state assunte con successo.",
+      "OGGI"
+    );
+  } else if (remainingCount === 1) {
+    summaryStatusMessage.textContent = "Ti manca solo 1 medicina per completare il piano di oggi!";
+    summaryStatusMessage.classList.remove("celebrate");
+  } else if (takenCount === 0) {
+    summaryStatusMessage.textContent = "Ti mancano tutte e " + totalCount + " le medicine da assumere!";
+    summaryStatusMessage.classList.remove("celebrate");
+  } else {
+    summaryStatusMessage.textContent = "Ti mancano ancora " + remainingCount + " medicine da assumere!";
+    summaryStatusMessage.classList.remove("celebrate");
+  }
+}
+
+/* ==========================================================================
+   === GESTIONE MODALE: AGGIUNTA MEDICINA (MASSIMO 6) ===
+   ========================================================================== */
+function openAddModal() {
+  if (doses.length >= 6) {
+    alert("Hai raggiunto il limite massimo di 6 medicine!");
+    return;
+  }
+  addModalOverlay.classList.add("active");
+  document.querySelector("#addMedName").focus();
+}
+
+function closeAddModal() {
+  addModalOverlay.classList.remove("active");
+  addMedForm.reset();
+}
+
+btnCloseAddModal.addEventListener("click", closeAddModal);
+btnCancelAdd.addEventListener("click", closeAddModal);
+
+addMedForm.addEventListener("submit", function(event) {
   event.preventDefault();
-  const currentMed = medicines[selectedIndex];
-  if (!currentMed) return;
 
-  currentMed.name = document.querySelector("#edit-name").value.trim();
-  currentMed.time = document.querySelector("#edit-time").value;
-  currentMed.spec = document.querySelector("#edit-spec").value.trim();
-  currentMed.instruction = document.querySelector("#edit-instruction").value.trim();
+  if (doses.length >= 6) {
+    alert("Limite massimo di 6 medicine già raggiunto.");
+    closeAddModal();
+    return;
+  }
 
-  editModal.classList.remove("is-open");
-  renderApp();
-  triggerCardShimmer();
+  const nameVal = document.querySelector("#addMedName").value.trim();
+  const timeVal = document.querySelector("#addMedTime").value.trim();
+  const specVal = document.querySelector("#addMedSpec").value.trim();
+  const instructionVal = document.querySelector("#addMedInstruction").value.trim();
+
+  const newMedicine = {
+    id: Date.now(),
+    name: nameVal || "Nuova Medicina",
+    time: timeVal || "12:00",
+    spec: specVal || "Dose personalizzata",
+    instruction: instructionVal || "Assumere secondo le indicazioni mediche.",
+    icon: "medication",
+    status: "pending"
+  };
+
+  doses.push(newMedicine);
+
+  // Ordina le medicine per orario cronologico
+  doses.sort(function(a, b) {
+    return a.time.localeCompare(b.time);
+  });
+
+  selectedDoseIndex = doses.findIndex(function(d) {
+    return d.id === newMedicine.id;
+  });
+
+  closeAddModal();
+  selectDose(selectedDoseIndex);
+  updateProgress();
+
+  showPhoneNotification(
+    "Medicina Aggiunta!",
+    newMedicine.name + " programmata per le ore " + newMedicine.time,
+    newMedicine.time
+  );
 });
 
-// Chiudi modali cliccando sullo sfondo oscurato
-addModal.addEventListener("click", function(e) {
-  if (e.target === addModal) addModal.classList.remove("is-open");
+/* ==========================================================================
+   === GESTIONE MODALE: MODIFICA NOME E ISTRUZIONI ===
+   ========================================================================== */
+function openEditModal() {
+  const currentDose = doses[selectedDoseIndex];
+  document.querySelector("#editMedName").value = currentDose.name;
+  document.querySelector("#editMedTime").value = currentDose.time;
+  document.querySelector("#editMedSpec").value = currentDose.spec;
+  document.querySelector("#editMedInstruction").value = currentDose.instruction;
+
+  editModalOverlay.classList.add("active");
+}
+
+function closeEditModal() {
+  editModalOverlay.classList.remove("active");
+}
+
+btnOpenEditModal.addEventListener("click", openEditModal);
+btnCloseEditModal.addEventListener("click", closeEditModal);
+btnCancelEdit.addEventListener("click", closeEditModal);
+
+editMedForm.addEventListener("submit", function(event) {
+  event.preventDefault();
+
+  const currentDose = doses[selectedDoseIndex];
+  currentDose.name = document.querySelector("#editMedName").value.trim() || currentDose.name;
+  currentDose.time = document.querySelector("#editMedTime").value.trim() || currentDose.time;
+  currentDose.spec = document.querySelector("#editMedSpec").value.trim() || currentDose.spec;
+  currentDose.instruction = document.querySelector("#editMedInstruction").value.trim() || currentDose.instruction;
+
+  closeEditModal();
+  selectDose(selectedDoseIndex);
+  updateProgress();
+
+  showPhoneNotification(
+    "Modifiche Salvate",
+    "I dettagli di " + currentDose.name + " sono stati aggiornati.",
+    currentDose.time
+  );
 });
 
-editModal.addEventListener("click", function(e) {
-  if (e.target === editModal) editModal.classList.remove("is-open");
-});
-
-/* === AVVIO INIZIALE ALL'APERTURA DELLA PAGINA === */
+/* ==========================================================================
+   === AVVIO APPLICAZIONE AL CARICAMENTO DELLA PAGINA ===
+   ========================================================================== */
 window.addEventListener("DOMContentLoaded", function() {
-  renderApp();
-  triggerCardShimmer();
-  // Controlla subito se c'è una notifica programmata per l'orario attuale
-  checkScheduledNotifications();
+  selectDose(0);
+  updateProgress();
+
+  // Notifica iniziale simulata per la prima dose della giornata
+  setTimeout(function() {
+    showPhoneNotification(
+      "Promemoria VITAPP",
+      "Prima medicina programmata: " + doses[0].name + " alle " + doses[0].time,
+      doses[0].time
+    );
+  }, 500);
 });
