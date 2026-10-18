@@ -1,7 +1,12 @@
 /* ==========================================================================
    === VARIABILI CSS (COLORI, FONT, SPAZIATURE, OMBRE) ===
    ========================================================================== */
+
+
+@import url('https://fonts.googleapis.com/css2?family=Rock+3D&display=swap');
+
 :root {
+
   /* Palette colori caldi (Warm Radiant Health) */
   --color-primary: #ac2d00;
   --color-primary-container: #d63c05;
@@ -26,6 +31,14 @@
 
   /* Tipografia */
   --font-family: 'Quantico', sans-serif;
+
+
+
+  h1 {
+    font-family: 'Rock 3D', cursive;
+    font-weight: 700;
+    font-style: normal;
+  }
 
   /* Raggi di curvatura (Border Radius) */
   --radius-sm: 8px;
@@ -802,7 +815,8 @@ body {
   margin-bottom: 6px;
 }
 
-.form-input, .form-textarea {
+.form-input,
+.form-textarea {
   width: 100%;
   padding: 10px 12px;
   font-family: inherit;
@@ -815,7 +829,8 @@ body {
   transition: border-color 0.2s ease;
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus,
+.form-textarea:focus {
   border-color: var(--color-primary);
   background: #ffffff;
 }
