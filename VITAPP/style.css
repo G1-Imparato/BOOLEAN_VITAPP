@@ -71,6 +71,7 @@ body {
   justify-content: center;
   align-items: flex-start;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 /* Contenitore principale dell'app mobile (centrato su schermi ampi) */
@@ -82,6 +83,7 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
+  z-index: 1;
 }
 
 .material-symbols-rounded {
@@ -729,9 +731,9 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(33, 26, 23, 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(33, 26, 23, 0.32);
+  backdrop-filter: blur(2.5px);
+  -webkit-backdrop-filter: blur(2.5px);
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -875,4 +877,176 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(172, 45, 0, 0.3);
+}
+
+/* ==========================================================================
+   === SFONDO ANIMATO: PILLOLE E PASTIGLIE CADENTI (TRIGGER TASTO "+") ===
+   ========================================================================== */
+.pills-bg-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  perspective: 900px;
+  transform-style: preserve-3d;
+}
+
+/* Singola pastiglia cadente */
+.falling-pill {
+  position: absolute;
+  top: 0;
+  left: var(--start-x, 50vw);
+  pointer-events: none;
+  animation-name: fallAndTumble;
+  animation-duration: var(--fall-duration, 3.2s);
+  animation-delay: var(--fall-delay, 0s);
+  animation-timing-function: cubic-bezier(0.38, 0.1, 0.58, 1);
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
+}
+
+@keyframes fallAndTumble {
+  0% {
+    transform: translateY(-90px) translateX(0) scale(var(--pill-scale, 1)) rotateZ(var(--rot-start, 0deg)) rotateX(0deg) rotateY(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.95;
+  }
+  85% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(calc(100vh + 130px)) translateX(var(--drift-x, 30px)) scale(var(--pill-scale, 1)) rotateZ(var(--rot-end, 360deg)) rotateX(var(--rot-x, 180deg)) rotateY(var(--rot-y, 180deg));
+    opacity: 0;
+  }
+}
+
+/* --- TIPO 1: CAPSULA BICOLORE --- */
+.pill-capsule {
+  width: 18px;
+  height: 44px;
+  border-radius: 999px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16), inset 1px 1px 2px rgba(255, 255, 255, 0.65);
+  overflow: hidden;
+  background: #ffffff;
+  position: relative;
+}
+
+.pill-capsule::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--pill-top, #ac2d00);
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.15);
+}
+
+.pill-capsule::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--pill-bot, #ffffff);
+}
+
+.pill-capsule .pill-shine {
+  position: absolute;
+  top: 4px;
+  left: 3px;
+  width: 3.5px;
+  height: 36px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.15) 100%);
+  border-radius: 999px;
+  z-index: 3;
+}
+
+/* Palette capsula */
+.capsule-coral { --pill-top: #ac2d00; --pill-bot: #ffffff; }
+.capsule-amber { --pill-top: #ea580c; --pill-bot: #fff7ed; }
+.capsule-teal  { --pill-top: #0d9488; --pill-bot: #ffffff; }
+.capsule-berry { --pill-top: #be123c; --pill-bot: #ffe4e6; }
+.capsule-gold  { --pill-top: #d97706; --pill-bot: #fef3c7; }
+
+/* --- TIPO 2: COMPRESSA TONDA --- */
+.pill-round {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14), inset 1px 1px 2px rgba(255, 255, 255, 0.8), inset -1px -1px 2px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.pill-round::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 15%;
+  right: 15%;
+  height: 1.5px;
+  background: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  transform: translateY(-50%);
+}
+
+.pill-round .pill-shine {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+}
+
+/* Palette compressa tonda */
+.round-white  { background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f4f0ec 70%, #ded7cf 100%); }
+.round-peach  { background: radial-gradient(circle at 35% 35%, #fff3ee 0%, #fcd6c6 70%, #f7ab93 100%); }
+.round-cyan   { background: radial-gradient(circle at 35% 35%, #f0fdfa 0%, #ccfbf1 70%, #99f6e4 100%); }
+.round-yellow { background: radial-gradient(circle at 35% 35%, #fefce8 0%, #fef08a 70%, #fde047 100%); }
+
+/* --- TIPO 3: PERLA SOFTGEL --- */
+.pill-softgel {
+  width: 20px;
+  height: 32px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  position: relative;
+  box-shadow: 0 10px 22px rgba(180, 83, 9, 0.28), inset -2px -2px 5px rgba(146, 64, 14, 0.4), inset 2px 2px 5px rgba(255, 255, 255, 0.8);
+}
+
+.pill-softgel .pill-shine {
+  position: absolute;
+  top: 4px;
+  left: 3px;
+  width: 4px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  transform: rotate(-18deg);
+}
+
+.softgel-gold {
+  background: radial-gradient(circle at 35% 30%, #fffbeb 0%, #f59e0b 45%, #b45309 90%);
+}
+
+.softgel-ruby {
+  background: radial-gradient(circle at 35% 30%, #fff1f2 0%, #f43f5e 50%, #9f1239 90%);
+  box-shadow: 0 10px 22px rgba(159, 18, 57, 0.28), inset -2px -2px 5px rgba(136, 19, 55, 0.4), inset 2px 2px 5px rgba(255, 255, 255, 0.8);
+}
+
+/* Micro-interazione sul pulsante rombo "+" */
+.rhombus-item.add-new-btn:active .rhombus-diamond {
+  transform: scale(0.90) rotate(45deg);
+  border-color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.8);
+  transition: transform 0.15s ease, background 0.15s ease;
 }

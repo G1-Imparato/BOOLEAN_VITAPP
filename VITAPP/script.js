@@ -116,6 +116,77 @@ phoneNotification.addEventListener("click", function() {
 });
 
 /* ==========================================================================
+   === FUNZIONE: SFONDO ANIMATO CON PASTIGLIE CADENTI (TRIGGER TASTO "+") ===
+   ========================================================================== */
+function triggerFallingPills() {
+  const container = document.querySelector("#pillsBgContainer");
+  if (!container) return;
+
+  const pillVariants = [
+    { type: "capsule", styleClass: "capsule-coral" },
+    { type: "capsule", styleClass: "capsule-amber" },
+    { type: "capsule", styleClass: "capsule-teal" },
+    { type: "capsule", styleClass: "capsule-berry" },
+    { type: "capsule", styleClass: "capsule-gold" },
+    { type: "round",   styleClass: "round-white" },
+    { type: "round",   styleClass: "round-peach" },
+    { type: "round",   styleClass: "round-cyan" },
+    { type: "round",   styleClass: "round-yellow" },
+    { type: "softgel", styleClass: "softgel-gold" },
+    { type: "softgel", styleClass: "softgel-ruby" }
+  ];
+
+  const pillCount = 32; // Numero di pastiglie per ogni cascata scenografica
+
+  for (let i = 0; i < pillCount; i++) {
+    const pill = document.createElement("div");
+    const chosen = pillVariants[Math.floor(Math.random() * pillVariants.length)];
+
+    pill.className = `falling-pill pill-${chosen.type} ${chosen.styleClass}`;
+
+    // Linea/punto luce 3D per effetto lucido e realistico
+    const shine = document.createElement("span");
+    shine.className = "pill-shine";
+    pill.appendChild(shine);
+
+    // Valori fisici e geometrici casuali
+    const startX = (Math.random() * 94 + 3).toFixed(1); // 3vw - 97vw
+    const driftX = (Math.random() * 120 - 60).toFixed(0); // da -60px a +60px
+    const scale = (Math.random() * 0.55 + 0.75).toFixed(2); // dimensione 0.75x - 1.30x
+    const duration = (Math.random() * 1.8 + 2.7).toFixed(2); // tempo caduta 2.7s - 4.5s
+    const delay = (Math.random() * 1.4).toFixed(2); // ritardo scaglionato 0s - 1.4s
+    const rotStart = (Math.random() * 360 - 180).toFixed(0);
+    const rotEnd = (parseInt(rotStart, 10) + (Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 360)).toFixed(0);
+    const rotX = (Math.random() * 540 - 270).toFixed(0);
+    const rotY = (Math.random() * 540 - 270).toFixed(0);
+
+    pill.style.setProperty("--start-x", `${startX}vw`);
+    pill.style.setProperty("--drift-x", `${driftX}px`);
+    pill.style.setProperty("--pill-scale", scale);
+    pill.style.setProperty("--rot-start", `${rotStart}deg`);
+    pill.style.setProperty("--rot-end", `${rotEnd}deg`);
+    pill.style.setProperty("--rot-x", `${rotX}deg`);
+    pill.style.setProperty("--rot-y", `${rotY}deg`);
+    pill.style.setProperty("--fall-duration", `${duration}s`);
+    pill.style.setProperty("--fall-delay", `${delay}s`);
+
+    // Rimozione dal DOM a fine animazione
+    pill.addEventListener("animationend", function() {
+      pill.remove();
+    });
+
+    // Pulizia di sicurezza
+    setTimeout(function() {
+      if (pill.parentNode) {
+        pill.remove();
+      }
+    }, (parseFloat(duration) + parseFloat(delay) + 0.8) * 1000);
+
+    container.appendChild(pill);
+  }
+}
+
+/* ==========================================================================
    === FUNZIONE: RENDER DELLA TIMELINE DELLE MEDICINE (ROMBI) ===
    ========================================================================== */
 function renderTimeline() {
@@ -373,6 +444,9 @@ function updateProgress() {
    === GESTIONE MODALE: AGGIUNTA MEDICINA (MASSIMO 6) ===
    ========================================================================== */
 function openAddModal() {
+  // Cascata di pastiglie sullo sfondo all'apertura tramite tasto "+"
+  triggerFallingPills();
+
   if (doses.length >= 6) {
     alert("Hai raggiunto il limite massimo di 6 medicine!");
     return;
@@ -427,6 +501,9 @@ addMedForm.addEventListener("submit", function(event) {
   closeAddModal();
   selectDose(selectedDoseIndex);
   updateProgress();
+
+  // Pioggia celebrativa di pastiglie all'avvenuta aggiunta
+  triggerFallingPills();
 
   showPhoneNotification(
     "Medicina Aggiunta!",
